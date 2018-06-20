@@ -88,6 +88,10 @@
     maxLimit: PER_PAGE * 2 
   }
   var restriction = null
+  var generalChart = null
+  var genderChart = null
+  var incomeChart = null
+  var incomeFrequencyGpaChart = null
 
   var getFilteredData = function() {
     var filteredData = data
@@ -208,6 +212,7 @@
     updateCounter('approved', results.approved.length)
     updatePagination(filteredData)
     updateTable()
+    updateCharts()
   }
 
   var updatePagination = function (data) {
@@ -342,6 +347,97 @@
       toggle.innerText = toggle.innerText.split(':')[0]
       menu.innerHTML = ''
     })
+  }
+
+  var updateCharts = function () {
+    updateGeneralChart()
+    updateGenderChart()
+  }
+
+  var updateGeneralChart = function () {
+    if (generalChart) {
+      generalChart.destroy()
+    }
+
+    var config = {
+      type: 'pie',
+      data: {
+        datasets: [{
+          data: [results.approved.length, results.reproved.length, results.dropout.length],
+          backgroundColor: ['#23d160', '#ffdd57', '#ff3860']
+        }],
+        labels: ['Aprovação', 'Reprovação', 'Evasão']
+      },
+      options: {
+        responsive: true,
+        title: {
+          display: true,
+          text: 'Distribuição Geral'
+        }
+      }
+    }
+
+    var ctx = document.getElementById('generalChart').getContext('2d')
+    generalChart = new Chart(ctx, config)
+  }
+
+  var updateGenderChart = function () {
+    if (genderChart) {
+      genderChart.destroy()
+    }
+    
+    var getCountByGender = function (list) {
+      return list.reduce(function(count, index) {
+        if (data[index].sexo === 'F') {
+          count.f += 1
+        } else if (data[index].sexo === 'M') {
+          count.m += 1
+        }
+        return count
+      }, {m: 0, f: 0})
+    }
+
+    var countByGender = {
+      approved: getCountByGender(results.approved),
+      reproved: getCountByGender(results.reproved),
+      dropout: getCountByGender(results.dropout),
+    }
+
+    var chartData = {
+      labels: ['Aprovação', 'Reprovação', 'Evasão'],
+      datasets: [{
+        label: 'Masculino',
+        backgroundColor: '#209cee',
+        data: [
+          countByGender.approved.m,
+          countByGender.reproved.m,
+          countByGender.dropout.m
+        ]
+      }, {
+        label: 'Feminino',
+        backgroundColor: '#00D1B2',
+        data: [
+          countByGender.approved.f,
+          countByGender.reproved.f,
+          countByGender.dropout.f
+        ]
+      }]
+    }
+    
+    var config = {
+      type: 'bar',
+      data: chartData,
+      options: {
+        responsive: true,
+        title: {
+          display: true,
+          text: 'Distribuição por Sexo'
+        }
+      }
+    }
+
+    var ctx = document.getElementById('genderChart').getContext('2d')
+    genderChart = new Chart(ctx, config)
   }
 
 })()
